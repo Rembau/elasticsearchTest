@@ -53,7 +53,7 @@ public class TestEsClient {
     @Test
     public void matchQuery() {
         QueryBuilder queryBuilder = QueryBuilders
-                .matchQuery("name", "千张");
+                .matchQuery("desc", "豆角");
 
         SearchResponse response = ClientFactory.newInstance().prepareSearch(Constant.INDEX_NAME)
                 .setQuery(queryBuilder)
