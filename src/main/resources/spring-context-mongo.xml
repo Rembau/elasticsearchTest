@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+		http://www.springframework.org/schema/data/mongo
+		http://www.springframework.org/schema/data/mongo/spring-mongo-1.7.xsd"
+       default-lazy-init="true">
+
+	<description>Mongo Configuration</description>
+	<!-- mongo:mongo-client host="${mongo.ip}" port="${mongo.port}" credentials="${mongo.url}"   -->
+	<mongo:mongo-client replica-set="${mongo.mongos}" credentials="${mongo.url}"  >
+		<mongo:client-options
+			connections-per-host="${mongo.connectionsPerHost}"
+			threads-allowed-to-block-for-connection-multiplier="${mongo.threadsAllowedToBlockForConnectionMultiplier}" 
+			max-wait-time="${mongo.maxWaitTime}"
+			connect-timeout="${mongo.connectTimeout}"
+			/>
+	</mongo:mongo-client> 
+	<mongo:db-factory dbname="${mongo.dbname}" mongo-ref="mongo"/>
+
+	<!-- MongoDB 3 的主要操作对象，所有对mongodb的增删改查的操作都是通过它完成 -->
+	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+	  <constructor-arg name="mongoDbFactory" ref="mongoDbFactory"/>
+	</bean>
+
+    <bean id="mongoBaseDao" class="org.rembau.test.elasticsearch.mongo.MongoBaseDao"></bean>
+
+	<mongo:mapping-converter base-package="com.unilife.umanager.common.mongo.entity" />
+	
+</beans>
