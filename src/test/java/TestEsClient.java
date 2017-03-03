@@ -50,6 +50,21 @@ public class TestEsClient {
         }
     }
 
+    @Test
+    public void matchQuery() {
+        QueryBuilder queryBuilder = QueryBuilders
+                .matchQuery("name", "千张");
+
+        SearchResponse response = ClientFactory.newInstance().prepareSearch(Constant.INDEX_NAME)
+                .setQuery(queryBuilder)
+                .execute().actionGet();
+
+        logger.info("response==========：{}", response);
+        for(SearchHit hit: response.getHits().getHits()) {
+            logger.info("hit=============：{}", GsonUtil.toJson(hit));
+        }
+    }
+
     public void matchAllQuery() {
         QueryBuilder queryBuilder = QueryBuilders.matchAllQuery()
                 .boost(11f);
