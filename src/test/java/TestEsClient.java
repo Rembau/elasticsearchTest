@@ -53,7 +53,7 @@ public class TestEsClient {
     @Test
     public void matchQuery() {
         QueryBuilder queryBuilder = QueryBuilders
-                .matchQuery("desc", "豆角");  //如果是搜索标签中的不同属性，需要设置不同权值，可以query中Multi Field中的语法设置权值。例如，将 鞋 的权值设为5.
+                .matchQuery("desc", "土豆 腐竹");  //如果是搜索标签中的不同属性，需要设置不同权值，可以query中Multi Field中的语法设置权值。例如，将 鞋 的权值设为5.
                                                             //"fields" : ["nike", "鞋^5"]
 
         SearchResponse response = ClientFactory.newInstance().prepareSearch(Constant.INDEX_NAME)
