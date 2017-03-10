@@ -35,8 +35,16 @@ public class MonitorDataCollection implements Serializable {
     private long maxElapsed;//最大耗时
     private long maxInput;//最大输入
     private long maxOutput;//最大输出
-    private String timestamp;
+    private long timestamp;
     private Date date;
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 
     public String get_id() {
         return _id;
@@ -228,14 +236,6 @@ public class MonitorDataCollection implements Serializable {
 
     public void setMaxOutput(long maxOutput) {
         this.maxOutput = maxOutput;
-    }
-
-    public String getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
     }
 
     public Date getDate() {

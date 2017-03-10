@@ -32,29 +32,41 @@ public class ElasticSearchBulkIn {
             BulkRequestBuilder bulkRequest=client.prepareBulk();
 
             long start = System.currentTimeMillis();
+            long _start = System.currentTimeMillis();
             int count=1;
             while((line=bfr.readLine())!=null) {
-
+                if (count > 1000) {
+                    count ++;
+                    break;
+                }
                 if (line.startsWith("{ \"index\"")) {
                     continue;
                 }
 
+
                 MonitorDataCollection monitorDataCollection = GsonUtil.fromJson(line, MonitorDataCollection.class);
-                IndexRequestBuilder requestBuilder = client.prepareIndex("dubbo", "dubboMonitor", monitorDataCollection.get_id());
+                IndexRequestBuilder requestBuilder = client.prepareIndex("test", "test", monitorDataCollection.get_id());
                 monitorDataCollection.set_id(null);
                 String toJson = GsonUtil.toJson(monitorDataCollection);
 
                 bulkRequest.add(requestBuilder.setSource(toJson));
+
                 if (count%1000==0) {
                     bulkRequest.execute().actionGet();
 
-                    System.out.println("处理第"+count+"行完成，耗时：" + (System.currentTimeMillis() - start));
+                    System.out.println("处理第 "+count+" 行完成，耗时：" + (System.currentTimeMillis() - start) + "--" + (System.currentTimeMillis() - _start));
+                    _start = System.currentTimeMillis();
 
+                }
+
+                if (count % 10000 == 0) {
+                    bulkRequest=client.prepareBulk();
+                    System.out.println("初始化bulk");
                 }
                 count++;
             }
             bulkRequest.execute().actionGet();
-            System.out.println("处理第"+count+"行完成，耗时：" + (System.currentTimeMillis() - start));
+            System.out.println("处理第 "+count+" 行完成，耗时：" + (System.currentTimeMillis() - start));
             bfr.close();
             fr.close();
         } catch (IOException e) {
