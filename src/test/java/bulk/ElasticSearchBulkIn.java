@@ -1,6 +1,7 @@
 package bulk;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
@@ -45,14 +46,15 @@ public class ElasticSearchBulkIn {
 
 
                 MonitorDataCollection monitorDataCollection = GsonUtil.fromJson(line, MonitorDataCollection.class);
-                IndexRequestBuilder requestBuilder = client.prepareIndex("test", "test", monitorDataCollection.get_id());
+                IndexRequestBuilder requestBuilder = client.prepareIndex("test1", "test1", monitorDataCollection.get_id());
                 monitorDataCollection.set_id(null);
                 String toJson = GsonUtil.toJson(monitorDataCollection);
 
                 bulkRequest.add(requestBuilder.setSource(toJson));
 
                 if (count%1000==0) {
-                    bulkRequest.execute().actionGet();
+                    BulkResponse bulkItemResponses = bulkRequest.execute().actionGet();
+                    System.out.println("处理结果："+bulkItemResponses);
 
                     System.out.println("处理第 "+count+" 行完成，耗时：" + (System.currentTimeMillis() - start) + "--" + (System.currentTimeMillis() - _start));
                     _start = System.currentTimeMillis();
