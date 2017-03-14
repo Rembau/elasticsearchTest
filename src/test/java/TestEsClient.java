@@ -57,8 +57,9 @@ public class TestEsClient {
     @Test
     public void matchQuery() {
         //如果是搜索标签中的不同属性，需要设置不同权值，可以query中Multi Field中的语法设置权值。例如，将 鞋 的权值设为5.
-        QueryBuilder queryBuilder = QueryBuilders.boolQuery().should(QueryBuilders
-                .matchQuery("name", "萝卜").boost(100f)).should(QueryBuilders
+        QueryBuilder queryBuilder = QueryBuilders.boolQuery().should(
+                QueryBuilders
+                .matchQuery("name", "萝卜").boost(3.0f)).should(QueryBuilders
                 .matchQuery("desc", "萝卜"));
 
                                                             //"fields" : ["nike", "鞋^5"]
@@ -77,8 +78,8 @@ public class TestEsClient {
     public void analyze() {
         IndicesAdminClient indicesAdminClient = ClientFactory.newInstance().admin().indices();
         AnalyzeRequestBuilder request = new AnalyzeRequestBuilder(indicesAdminClient, AnalyzeAction.INSTANCE,"youyue","红旦旦萝卜");
-        request.setAnalyzer("ik_smart");    //ik_smart、ik_max_word
-        request.setTokenizer("ik_smart");
+        //request.setAnalyzer("ik_max_word");    //ik_smart、ik_max_word
+        //request.setTokenizer("ik_smart");
 // Analyzer（分析器）、Tokenizer（分词器）
         List listAnalysis = request.execute().actionGet().getTokens();
         System.out.println(GsonUtil.toJson(listAnalysis));
