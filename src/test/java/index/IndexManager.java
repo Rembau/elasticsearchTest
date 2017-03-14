@@ -7,6 +7,7 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
@@ -29,6 +30,21 @@ public class IndexManager {
     }
 
     public static XContentBuilder getMapping(){
+
+        try {
+            XContentBuilder builder= XContentFactory.jsonBuilder()
+                    .startObject()
+                    .startObject("testIndexName")
+                    .startObject("properties")
+                    .startObject("id").field("type", "integer").field("store", "yes").endObject()
+                    .startObject("kw").field("type", "string").field("store", "yes").field("indexAnalyzer", "ik").field("searchAnalyzer", "ik").endObject()
+                    .startObject("edate").field("type", "date").field("store", "yes").field("indexAnalyzer", "ik").field("searchAnalyzer", "ik").endObject()
+                    .endObject()
+                    .endObject()
+                    .endObject();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         XContentBuilder mapping = null;
         try {
             mapping = jsonBuilder()
