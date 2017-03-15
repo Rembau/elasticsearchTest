@@ -1,17 +1,17 @@
 package parseDubboMonitor;
 
-import java.io.Serializable;
+import parseData.MongoData;
+
 import java.util.Date;
 
 /**
  * Created by rembau on 2017/2/27.
  */
-public class MonitorDataCollection implements Serializable {
+public class MonitorDataCollection extends MongoData {
     /**
 	 * 
 	 */
 	private static final long serialVersionUID = 6188541888575496153L;
-	private String _id;
     private String type;
     private String protocol;
     private String userName;
@@ -44,14 +44,6 @@ public class MonitorDataCollection implements Serializable {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
-    }
-
-    public String get_id() {
-        return _id;
-    }
-
-    public void set_id(String _id) {
-        this._id = _id;
     }
 
     public String getType() {

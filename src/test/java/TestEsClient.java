@@ -77,8 +77,8 @@ public class TestEsClient {
     @Test
     public void analyze() {
         IndicesAdminClient indicesAdminClient = ClientFactory.newInstance().admin().indices();
-        AnalyzeRequestBuilder request = new AnalyzeRequestBuilder(indicesAdminClient, AnalyzeAction.INSTANCE,"youyue","红旦旦萝卜");
-        //request.setAnalyzer("ik_max_word");    //ik_smart、ik_max_word
+        AnalyzeRequestBuilder request = new AnalyzeRequestBuilder(indicesAdminClient, AnalyzeAction.INSTANCE,"youyue","我是中国人");
+        request.setAnalyzer("ik_smart");    //ik_smart、ik_max_word
         //request.setTokenizer("ik_smart");
 // Analyzer（分析器）、Tokenizer（分词器）
         List listAnalysis = request.execute().actionGet().getTokens();

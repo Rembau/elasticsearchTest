@@ -18,7 +18,7 @@ public class FormatJson {
     @Test
     public void bulkIn() {
         DubboDataUtil.bulkIn(newInstance(),"C:\\Users\\youyue\\Desktop\\数据\\pv数据-lines-es.json",
-                "pvdata_v1", "webPv", WebEventCollection.class);
+                "pvdata_v1", "webPv", WebEventCollection.class, null);
     }
 
     @Test

@@ -1,11 +1,19 @@
 package parseData;
 
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.undercouch.bson4jackson.BsonFactory;
+import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
+import org.bson.types.ObjectId;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.junit.Test;
 
 import java.io.*;
+import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,26 +23,48 @@ import java.util.regex.Pattern;
  */
 public class DubboDataUtil {
 
-    public static <T extends MongoData> void bulkIn(TransportClient client, String source, String index, String type, Class<T> tClass) {
-        try {
+    public static <T extends MongoData> void bulkIn(TransportClient client, String[] source, String index, String type, Class<T> tClass, HandleDataInf handleDataInf) {
+        long start = System.currentTimeMillis();
+        for (String fileName : source) {
+            System.out.println("开始处理文件：" + fileName);
+            bulkIn(client, fileName, index, type, tClass, handleDataInf);
+            System.out.println("处理文件：" + fileName + " 完成，耗时：" + (System.currentTimeMillis() - start));
+        }
+    }
 
+    public static <T extends MongoData> void bulkIn(TransportClient client, String source, String index, String type, Class<T> tClass, HandleDataInf handleDataInf) {
+
+        String line=null;
+        int count=1;
+        try {
             File article = new File(source);
             FileReader fr=new FileReader(article);
             BufferedReader bfr=new BufferedReader(fr);
-            String line=null;
             BulkRequestBuilder bulkRequest=client.prepareBulk();
 
             long start = System.currentTimeMillis();
             long _start = System.currentTimeMillis();
-            int count=1;
+
             while((line=bfr.readLine())!=null) {
 
-                T t = GsonUtil.gson.fromJson(line, tClass);
-                IndexRequestBuilder requestBuilder = client.prepareIndex(index, type, t.get_id());
-                t.set_id(null);
+                try {
+                    T t = GsonUtil.gson.fromJson(line, tClass);
+                    Map<String, Integer> integerMap = t.get_id();
+                    ObjectId objectId = ObjectId.createFromLegacyFormat(integerMap.get("_time"), integerMap.get("_machine"), integerMap.get("_inc"));
+                    IndexRequestBuilder requestBuilder = client.prepareIndex(index, type, objectId.toHexString());
+                    t.set_id(null);
 
-                String toJson = GsonUtil.gson.toJson(t);
-                bulkRequest.add(requestBuilder.setSource(toJson));
+                    String toJson = null;
+                    if (handleDataInf != null) {
+                        handleDataInf.handle(t);
+                    }
+                    toJson = GsonUtil.gson.toJson(t);
+                    bulkRequest.add(requestBuilder.setSource(toJson));
+                } catch (Exception e) {
+                    System.out.println("================异常数据：" + line + "，行数：" + count);
+                    e.printStackTrace();
+                }
+
 
 //                IndexRequestBuilder requestBuilder = client.prepareIndex(index, type);
 //                bulkRequest.add(requestBuilder.setSource(line));
@@ -57,7 +87,8 @@ public class DubboDataUtil {
             System.out.println("处理第 "+count+" 行完成，耗时：" + (System.currentTimeMillis() - start));
             bfr.close();
             fr.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            System.out.println("================异常数据：" + line + "，行数：" + count);
             e.printStackTrace();
         }
     }
@@ -108,7 +139,10 @@ public class DubboDataUtil {
                 bufferedWriter.write(GsonUtil.gson.toJson(t));
                 bufferedWriter.newLine();
 
-                System.out.println("生成标准JSON数据，处理第"+i+"行完成，耗时：" + (System.currentTimeMillis() - start));
+                if (i % 10000 == 0) {
+                    System.out.println("生成标准JSON数据，处理第"+i+"行完成，耗时：" + (System.currentTimeMillis() - start));
+                }
+
                 i++;
 
                 json = bufferedReader.readLine();
@@ -121,15 +155,79 @@ public class DubboDataUtil {
         }
     }
 
-    public static void remoreKonggeHuanhang(String source, String target) {
-        try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(source));
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(target));
+    @Test
+    public void testObjectId() {
+        org.bson.types.ObjectId objectId = org.bson.types.ObjectId.createFromLegacyFormat(1488808962, 1923037543, -430984668);
+        System.out.println(GsonUtil.gson.toJson(objectId) + " " + objectId.toHexString());
+    }
 
-            Pattern patternJson = Pattern.compile("");
+    public static void readBsonFile(String bsonPah, String target) {
+        BufferedInputStream bufferedInputStream = null;
+        FileWriter fileWriter = null;
+        BufferedWriter bufferedWriter = null;
+        try {
+            bufferedInputStream = new BufferedInputStream(new FileInputStream(bsonPah));
+            fileWriter = new FileWriter(target);
+            bufferedWriter = new BufferedWriter(fileWriter, 50*1024*1024);
+
+            ObjectMapper mapper = new ObjectMapper(new BsonFactory());
+            @SuppressWarnings("deprecation")
+            MappingIterator<BSONObject> iterator =
+                    mapper.reader(BasicBSONObject.class).readValues(bufferedInputStream);
+
+            int fileNum = 1;
+            int i = 1;
+            long start = System.currentTimeMillis();
+            while (iterator.hasNext()) {
+                BSONObject object = iterator.next();
+                String json = GsonUtil.gson.toJson(object);
+
+                bufferedWriter.write(json);
+                bufferedWriter.newLine();
+
+                if (i % 10000 == 0) {
+                    System.out.println("解析bson文件，处理第" + i + "条完成，耗时：" + (System.currentTimeMillis() - start));
+                }
+                i++;
+
+                if (i % 3000000 == 0) {   //300万行，换一个文件fileWriter);
+                    try {
+                        bufferedWriter.close();
+                        fileWriter.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    fileWriter = new FileWriter(target + "." + fileNum);
+                    bufferedWriter = new BufferedWriter(fileWriter, 50*1024*1024);
+                    fileNum ++;
+                }
+            }
+            System.out.println("解析bson文件，处理第" + i + "条完成，耗时：" + (System.currentTimeMillis() - start));
+            System.out.println("解析bson文件，完成");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                bufferedWriter.close();
+                fileWriter.close();
+                bufferedInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void remoreKonggeHuanhang(String source, String target) {
+        StringBuilder newLine = new StringBuilder();
+        try {
+            FileReader fileReader = new FileReader(source);
+            BufferedReader bufferedReader = new BufferedReader(fileReader, 50*1024*1024);
+            FileWriter fileWriter = new FileWriter(target);
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter, 50*1024*1024);
 
             String line = bufferedReader.readLine();
-            StringBuilder newLine = new StringBuilder();
             long start = System.currentTimeMillis();
             Stack<String> stack = new Stack<>();
             int i = 1;
@@ -162,12 +260,14 @@ public class DubboDataUtil {
                 } else {
                     newLine.append(trim);
                 }
+                System.out.println("newLine.length：" + newLine.length());
                 line = bufferedReader.readLine();
             }
 
             bufferedReader.close();
             bufferedWriter.close();
-        } catch (IOException e) {
+        } catch (Throwable e) {
+            System.out.println("异常：" + newLine);
             e.printStackTrace();
         }
     }
