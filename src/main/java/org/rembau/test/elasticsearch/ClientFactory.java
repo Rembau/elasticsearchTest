@@ -28,7 +28,7 @@ public class ClientFactory {
         //创建client
         try {
             client = new PreBuiltTransportClient(settings)
-                    .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("127.0.0.1"), 9300));
+                    .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.2.87"), 9300));
         } catch (UnknownHostException e) {
             logger.error("", e);
         }

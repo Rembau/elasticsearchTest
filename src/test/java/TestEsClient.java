@@ -6,15 +6,21 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.junit.Test;
 import org.rembau.test.elasticsearch.ClientFactory;
 import org.rembau.test.elasticsearch.commons.Constant;
 import org.rembau.test.elasticsearch.tools.GsonUtil;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,27 +63,33 @@ public class TestEsClient {
     @Test
     public void matchQuery() {
         //如果是搜索标签中的不同属性，需要设置不同权值，可以query中Multi Field中的语法设置权值。例如，将 鞋 的权值设为5.
-        QueryBuilder queryBuilder = QueryBuilders.boolQuery().should(
-                QueryBuilders
-                .matchQuery("name", "萝卜").boost(3.0f)).should(QueryBuilders
-                .matchQuery("desc", "萝卜"));
+        QueryBuilder queryBuilder = null;
+//        queryBuilder = QueryBuilders.boolQuery().should(
+//                QueryBuilders
+//                .matchQuery("name", "萝卜").boost(3.0f)).should(QueryBuilders
+//                .matchQuery("desc", "萝卜"));
+//        queryBuilder = QueryBuilders.matchAllQuery();
+//        queryBuilder = QueryBuilders.matchQuery("title", "SQL");
+        queryBuilder = QueryBuilders.queryStringQuery("sql");
 
                                                             //"fields" : ["nike", "鞋^5"]
         System.out.println("===============" + queryBuilder);
-        SearchResponse response = ClientFactory.newInstance().prepareSearch(Constant.INDEX_NAME)
+        SearchResponse response = ClientFactory.newInstance().prepareSearch("blog")
                 .setQuery(queryBuilder).setExplain(true)
                 .execute().actionGet();
 
         logger.info("response==========：{}", response);
-//        for(SearchHit hit: response.getHits().getHits()) {
-//            logger.info("hit=============：{}", GsonUtil.toJson(hit));
-//        }
+        logger.info("");
+        for(SearchHit hit: response.getHits().getHits()) {
+            //logger.info("hit=============：{}", GsonUtil.toJson(hit));
+            logger.info("=1========={}", hit.getSourceAsString());
+        }
     }
 
     @Test
     public void analyze() {
-        IndicesAdminClient indicesAdminClient = ClientFactory.newInstance().admin().indices();
-        AnalyzeRequestBuilder request = new AnalyzeRequestBuilder(indicesAdminClient, AnalyzeAction.INSTANCE,"youyue","我是中国人");
+        IndicesAdminClient indicesAdminClient = newInstance().admin().indices();
+        AnalyzeRequestBuilder request = new AnalyzeRequestBuilder(indicesAdminClient, AnalyzeAction.INSTANCE,"dubbo_v2","我是中国人");
         request.setAnalyzer("ik_smart");    //ik_smart、ik_max_word
         //request.setTokenizer("ik_smart");
 // Analyzer（分析器）、Tokenizer（分词器）
@@ -98,6 +110,21 @@ public class TestEsClient {
         UpdateResponse response = ClientFactory.newInstance().prepareUpdate("library", "book", "2")
                 .setDoc("json")
                 .execute().actionGet();
+    }
+
+    public static TransportClient newInstance() {
+
+        TransportClient client = null;
+
+        Settings settings = Settings.builder().put("cluster.name", "elasticsearch").build();
+        //创建client
+        try {
+            client = new PreBuiltTransportClient(settings)
+                    .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.2.87"), 9300));
+        } catch (UnknownHostException e) {
+            logger.error("", e);
+        }
+        return client;
     }
 
 }
