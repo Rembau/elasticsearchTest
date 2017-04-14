@@ -1,5 +1,9 @@
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse;
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequestBuilder;
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesResponse;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeAction;
 import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
@@ -50,7 +54,7 @@ public class TestEsClient {
                 //.add(QueryBuilders.quer("catalogName", "家常菜"));
                 //.add(QueryBuilders.prefixQuery("name", "一下"));
         logger.info("queryBuilder=========：{}" + queryBuilder.toString());
-        SearchResponse response = ClientFactory.newInstance().prepareSearch(Constant.INDEX_NAME)
+        SearchResponse response = ClientFactory.newInstance().prepareSearch("pvdata").setTypes("webPv")
                 .setQuery(QueryBuilders.matchAllQuery())
                 .execute().actionGet();
 
@@ -110,6 +114,38 @@ public class TestEsClient {
         UpdateResponse response = ClientFactory.newInstance().prepareUpdate("library", "book", "2")
                 .setDoc("json")
                 .execute().actionGet();
+    }
+
+    @Test
+    public void createAlias() {
+        TransportClient client = newInstance();
+        IndicesAliasesResponse response = client.admin().indices().prepareAliases().addAlias("mobile-test_interface_call_v1-2017-04-12", "pvdata").execute().actionGet();
+        System.out.println(GsonUtil.toJson(response));
+
+        //IndicesAliasesResponse pvdataV1 = client.admin().indices().prepareAliases().removeIndex("pvdata_v1").execute().actionGet();
+        //System.out.println(GsonUtil.toJson(pvdataV1));
+    }
+
+    @Test
+    public void deleteAlias() {
+        TransportClient client = newInstance();
+
+        IndicesAdminClient indices = client.admin().indices();
+
+        IndicesAliasesRequestBuilder indicesAliasesRequestBuilder = indices.prepareAliases();
+        IndicesAliasesResponse pvdataV1 = indicesAliasesRequestBuilder.removeIndex("pvdata_v1").execute().actionGet();
+        System.out.println(GsonUtil.toJson(pvdataV1));
+    }
+
+    @Test
+    public void getAlias() {
+        TransportClient client = newInstance();
+
+        IndicesAdminClient indices = client.admin().indices();
+        GetAliasesRequestBuilder requestBuilder = indices.prepareGetAliases("pvdata");
+        GetAliasesResponse aliasesResponse = requestBuilder.execute().actionGet();
+
+        System.out.println(GsonUtil.toJson(aliasesResponse));
     }
 
     public static TransportClient newInstance() {
