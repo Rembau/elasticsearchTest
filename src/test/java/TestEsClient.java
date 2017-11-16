@@ -68,17 +68,21 @@ public class TestEsClient {
     public void matchQuery() {
         //如果是搜索标签中的不同属性，需要设置不同权值，可以query中Multi Field中的语法设置权值。例如，将 鞋 的权值设为5.
         QueryBuilder queryBuilder = null;
-//        queryBuilder = QueryBuilders.boolQuery().should(
-//                QueryBuilders
-//                .matchQuery("name", "萝卜").boost(3.0f)).should(QueryBuilders
-//                .matchQuery("desc", "萝卜"));
+        queryBuilder = QueryBuilders.boolQuery().should(
+                QueryBuilders.matchQuery("name", "萝卜").boost(1.0f)
+        ).should(
+                QueryBuilders.matchQuery("desc", "萝卜")
+        );
+
+//        QueryBuilders.termQuery("name", null);
+
 //        queryBuilder = QueryBuilders.matchAllQuery();
 //        queryBuilder = QueryBuilders.matchQuery("title", "SQL");
-        queryBuilder = QueryBuilders.queryStringQuery("sql");
+        //queryBuilder = QueryBuilders.queryStringQuery("sql");
 
                                                             //"fields" : ["nike", "鞋^5"]
         System.out.println("===============" + queryBuilder);
-        SearchResponse response = ClientFactory.newInstance().prepareSearch("blog")
+        SearchResponse response = ClientFactory.newInstance().prepareSearch("cookbook")
                 .setQuery(queryBuilder).setExplain(true)
                 .execute().actionGet();
 
